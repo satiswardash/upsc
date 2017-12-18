@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "556974069498",
+    "firebase_url": "https://upsc-c98c0.firebaseio.com",
+    "project_id": "upsc-c98c0",
+    "storage_bucket": "upsc-c98c0.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:556974069498:android:55423fdb4b1b29d3",
+        "android_client_info": {
+          "package_name": "com.kortain.upsc"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "556974069498-4m77ht5v7u3f2320mff5m4ubf9n9vc63.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kortain.upsc",
+            "certificate_hash": "dbe098fb3e7567e3c9d95900b004a54974cf8b94"
+          }
+        },
+        {
+          "client_id": "556974069498-c9uam1j6srrgl24er0j3diak4sa5m3vj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFTenib3DqOlE05QPFEKuJsnQnrxJvDKo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "556974069498-c9uam1j6srrgl24er0j3diak4sa5m3vj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
