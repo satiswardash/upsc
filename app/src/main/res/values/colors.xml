@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#4A90E2</color>
-    <color name="colorSecondary">#F5A623</color>
+    <color name="colorPrimary">#4a90e2</color>
+    <color name="colorSecondary">#f5a623</color>
     <color name="colorAccent">#4A4A4A</color>
 
-    <color name="colorText">#F7F7F7</color>
-    <color name="colorTextDark">#DAD8DB</color>
-    <color name="colorTextRegular">#4A4A4A</color>
+    <color name="colorText">#f7f7f7</color>
+    <color name="colorTextDark">#dad8db</color>
+    <color name="colorTextRegular">#744a4a4a</color>
     <color name="colorTextBlack">#000000</color>
 
     <color name="colorBackground">#EBEBEB</color>
+    <color name="colorBackgroundMid">#D8D8D8</color>
     <color name="colorBackgroundDark">#9B9B9B</color>
     <color name="colorBackgroundWhite">#FFFFFF</color>
     <color name="colorBackgroundLight">#F7F7F7</color>
+    <color name="facebook">#3B5998</color>
 </resources>
