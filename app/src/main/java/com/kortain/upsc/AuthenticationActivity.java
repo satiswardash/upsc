@@ -1,100 +1,133 @@
 package com.kortain.upsc;
 
+import android.content.Intent;
+import android.os.Bundle;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.TabLayout;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.view.ViewGroup;
+import android.widget.Toast;
 
-import android.widget.TextView;
+import com.google.firebase.auth.FirebaseUser;
+import com.kortain.upsc.fragments.AuthenticationFragment;
+import com.kortain.upsc.utils.FirebaseUtility;
+import com.kortain.upsc.utils.NetworkUtility;
 
-public class AuthenticationActivity extends AppCompatActivity {
+import static com.kortain.upsc.utils.FirebaseUtility.FirebaseUtilityCallbacks;
 
+public class AuthenticationActivity extends AppCompatActivity implements FirebaseUtilityCallbacks {
+
+    private ConstraintLayout loadingScreen;
     private SectionsPagerAdapter mSectionsPagerAdapter;
-
-    /**
-     * The {@link ViewPager} that will host the section contents.
-     */
     private ViewPager mViewPager;
+    private Toolbar toolbar;
+    private TabLayout tabLayout;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_authentication);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        init();
+
+        if (loadingScreen.getVisibility() == View.VISIBLE) {
+            loadingScreen.setVisibility(View.INVISIBLE);
+        }
+
         setSupportActionBar(toolbar);
-        // Create the adapter that will return a fragment for each of the three
-        // primary sections of the activity.
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-
-        // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
-
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
-
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
 
     }
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
-        /**
-         * The fragment argument representing the section number for this
-         * fragment.
-         */
-        private static final String ARG_SECTION_NUMBER = "section_number";
+    void init() {
+        loadingScreen = findViewById(R.id.loading);
+        toolbar = findViewById(R.id.toolbar);
+        mViewPager = findViewById(R.id.container);
+        tabLayout = findViewById(R.id.tabs);
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+    }
 
-        public PlaceholderFragment() {
+    public void signIn(String email, String password) {
+        if (loadingScreen.getVisibility() == View.INVISIBLE) {
+            loadingScreen.setVisibility(View.VISIBLE);
         }
 
-        /**
-         * Returns a new instance of this fragment for the given section
-         * number.
-         */
-        public static PlaceholderFragment newInstance(int sectionNumber) {
-            PlaceholderFragment fragment = new PlaceholderFragment();
-            Bundle args = new Bundle();
-            args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            fragment.setArguments(args);
-            return fragment;
+        if (NetworkUtility.hasNetworkAccess(this)){
+            FirebaseUtility.getInstance(getApplicationContext(), this)
+                    .signInWithEmailAndPassword(
+                            email,
+                            password,
+                            FirebaseUtility.getFirebaseAuth());
         }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-
-            View rootView = null;
-            int arg = getArguments().getInt(ARG_SECTION_NUMBER);
-            if(arg == 1){
-                rootView = inflater.inflate(R.layout.layout_signin, container, false);
-            }
-            else if(arg == 2){
-                rootView = inflater.inflate(R.layout.layout_register, container, false);
-            }
-            return rootView;
+        else {
+            //TODO -- Show no network layout
         }
     }
 
-    /**
-     * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
-     * one of the sections/tabs/pages.
-     */
+    public void signUp(String email, String password) {
+        if (loadingScreen.getVisibility() == View.INVISIBLE) {
+            loadingScreen.setVisibility(View.VISIBLE);
+        }
+
+        if (NetworkUtility.hasNetworkAccess(this)){
+            FirebaseUtility.getInstance(getApplicationContext(), this)
+                    .signUpWithEmailAndPassword(
+                            email,
+                            password,
+                            FirebaseUtility.getFirebaseAuth());
+        }
+        else {
+            //TODO -- Show no network layout
+        }
+    }
+
+    //TODO
+    @Override
+    public void isSuccessful(FirebaseUser firebaseUser, int flag) {
+
+        if (loadingScreen.getVisibility() == View.VISIBLE) {
+            loadingScreen.setVisibility(View.INVISIBLE);
+        }
+
+        switch (flag) {
+
+            case FirebaseUtility.SIGNIN_SUCCESS_UNVERIFIED: {
+                Toast.makeText(getApplicationContext(), R.string.email_not_verified, Toast.LENGTH_SHORT).show();
+                break;
+            }
+            case FirebaseUtility.SIGNIN_SUCCESS_VERIFIED: {
+                App.user = firebaseUser;
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                startActivity(intent);
+                finishAffinity();
+                break;
+            }
+            case FirebaseUtility.SIGNUP_SUCCESS: {
+                Toast.makeText(getApplicationContext(), getString(R.string.account_created) + firebaseUser.getUid(), Toast.LENGTH_SHORT).show();
+                break;
+            }
+        }
+
+    }
+
+    @Override
+    public void isFailure(String message) {
+
+        if (loadingScreen.getVisibility() == View.VISIBLE) {
+            loadingScreen.setVisibility(View.INVISIBLE);
+        }
+
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+    }
+
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
         public SectionsPagerAdapter(FragmentManager fm) {
@@ -103,15 +136,15 @@ public class AuthenticationActivity extends AppCompatActivity {
 
         @Override
         public Fragment getItem(int position) {
-            // getItem is called to instantiate the fragment for the given page.
-            // Return a PlaceholderFragment (defined as a static inner class below).
-            return PlaceholderFragment.newInstance(position + 1);
+            AuthenticationFragment fragment = AuthenticationFragment.newInstance(position + 1);
+            return fragment;
         }
 
         @Override
         public int getCount() {
-            // Show 3 total pages.
             return 2;
         }
+
+
     }
 }

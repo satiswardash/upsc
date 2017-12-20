@@ -1,8 +1,12 @@
 package com.kortain.upsc;
 
-import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.widget.Toast;
+
+import com.google.gson.Gson;
+import com.kortain.upsc.models.ApplicationData;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -11,12 +15,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (!auth) {
-            Intent intent = new Intent(MainActivity.this, AuthenticationActivity.class);
-            startActivity(intent);
-        }
-
         setContentView(R.layout.activity_main);
+
+        Toast.makeText(this, App.user.getUid(), Toast.LENGTH_LONG).show();
+
+
+        ApplicationData data = SampleDataProvider.getInstance().generateSampleData();
+        Gson gson = new Gson();
+        Log.i("ApplicationJSONData", "onCreate: "+gson.toJson(data));
+
     }
 }
