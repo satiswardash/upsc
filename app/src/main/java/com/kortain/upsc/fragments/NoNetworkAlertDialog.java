@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 
+import com.kortain.upsc.AuthenticationActivity;
 import com.kortain.upsc.R;
 
 /**
@@ -49,15 +50,16 @@ public class NoNetworkAlertDialog extends DialogFragment {
         View rootView = inflater.inflate(R.layout.layout_no_network, null);
         builder.setView(rootView);
 
+        final Dialog dialog = builder.create();
         tryAgainButton = rootView.findViewById(R.id.nn_tryAgain_button);
         tryAgainButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                getDialog().dismiss();
                 mListeners.retry(view);
             }
         });
 
-        Dialog dialog = builder.create();
         dialog.getWindow().setLayout(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.MATCH_PARENT);
 
         return dialog;

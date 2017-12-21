@@ -16,6 +16,12 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -25,6 +31,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -32,6 +39,8 @@ import com.kortain.upsc.fragments.AuthenticationFragment;
 import com.kortain.upsc.fragments.NoNetworkAlertDialog;
 import com.kortain.upsc.utils.FirebaseUtility;
 import com.kortain.upsc.utils.NetworkUtility;
+
+import java.util.Arrays;
 
 import static com.kortain.upsc.utils.FirebaseUtility.FirebaseUtilityCallbacks;
 
@@ -48,6 +57,7 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
     private DialogFragment dialogFragment;
     private GoogleSignInOptions gso;
     private GoogleSignInClient mGoogleSignInClient;
+    private CallbackManager mFacebookCallbackManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +84,7 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
+        mFacebookCallbackManager = CallbackManager.Factory.create();
     }
 
     void init() {
@@ -84,20 +95,65 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
     }
 
+    public void facebookAuthentication(View view) {
+
+        if (NetworkUtility.hasNetworkAccess(this)) {
+            if (loadingScreen.getVisibility() == View.INVISIBLE) {
+                loadingScreen.setVisibility(View.VISIBLE);
+            }
+            String[] permissions = {"email", "public_profile"};
+            LoginManager loginManager = LoginManager.getInstance();
+
+            loginManager.logInWithReadPermissions(this, Arrays.asList(permissions));
+            LoginManager.getInstance().registerCallback(mFacebookCallbackManager, new FacebookCallback<LoginResult>() {
+                @Override
+                public void onSuccess(LoginResult loginResult) {
+                    if (loadingScreen.getVisibility() == View.VISIBLE) {
+                        loadingScreen.setVisibility(View.INVISIBLE);
+                    }
+                    handleFacebookAccessToken(loginResult.getAccessToken());
+                }
+
+                @Override
+                public void onCancel() {
+                    if (loadingScreen.getVisibility() == View.VISIBLE) {
+                        loadingScreen.setVisibility(View.INVISIBLE);
+                    }
+                    //TODO
+                }
+
+                @Override
+                public void onError(FacebookException error) {
+                    if (loadingScreen.getVisibility() == View.VISIBLE) {
+                        loadingScreen.setVisibility(View.INVISIBLE);
+                    }
+                    //TODO
+                }
+            });
+        } else {
+            showNoNetworkDialog();
+        }
+    }
+
     public void googleAuthentication(View view) {
 
-        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGN_IN);
+        if (NetworkUtility.hasNetworkAccess(this)) {
+            if (loadingScreen.getVisibility() == View.INVISIBLE) {
+                loadingScreen.setVisibility(View.VISIBLE);
+            }
+            Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+            startActivityForResult(signInIntent, RC_SIGN_IN);
+        } else {
+            showNoNetworkDialog();
+        }
 
     }
 
     public void signIn(String email, String password) {
-
-        if (loadingScreen.getVisibility() == View.INVISIBLE) {
-            loadingScreen.setVisibility(View.VISIBLE);
-        }
-
         if (NetworkUtility.hasNetworkAccess(this)) {
+            if (loadingScreen.getVisibility() == View.INVISIBLE) {
+                loadingScreen.setVisibility(View.VISIBLE);
+            }
             FirebaseUtility.getInstance(getApplicationContext(), this)
                     .signInWithEmailAndPassword(
                             email,
@@ -110,11 +166,10 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
 
     public void signUp(String email, String password) {
 
-        if (loadingScreen.getVisibility() == View.INVISIBLE) {
-            loadingScreen.setVisibility(View.VISIBLE);
-        }
-
         if (NetworkUtility.hasNetworkAccess(this)) {
+            if (loadingScreen.getVisibility() == View.INVISIBLE) {
+                loadingScreen.setVisibility(View.VISIBLE);
+            }
             FirebaseUtility.getInstance(getApplicationContext(), this)
                     .signUpWithEmailAndPassword(
                             email,
@@ -128,7 +183,9 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
+        if (loadingScreen.getVisibility() == View.VISIBLE) {
+            loadingScreen.setVisibility(View.INVISIBLE);
+        }
         // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
@@ -139,7 +196,42 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
             } catch (ApiException e) {
                 Toast.makeText(this, R.string.update_playservice, Toast.LENGTH_SHORT).show();
             }
+        } else {
+            mFacebookCallbackManager.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    private void handleFacebookAccessToken(AccessToken token) {
+        final FirebaseAuth mAuth = FirebaseUtility.getFirebaseAuth();
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                            switch (ACTION) {
+                                case F_SIGNIN: {
+                                    App.user = firebaseUser;
+                                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                    startActivity(intent);
+                                    finishAffinity();
+                                    break;
+                                }
+                                case F_SIGNUP: {
+
+                                    //TODO
+                                    break;
+                                }
+                            }
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Toast.makeText(AuthenticationActivity.this, "Authentication failed.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
@@ -152,15 +244,15 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
                             FirebaseUser firebaseUser = auth.getCurrentUser();
-                            switch (ACTION){
-                                case SIGNIN:{
+                            switch (ACTION) {
+                                case G_SIGNIN: {
                                     App.user = firebaseUser;
                                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
                                     startActivity(intent);
                                     finishAffinity();
                                     break;
                                 }
-                                case SIGNUP:{
+                                case G_SIGNUP: {
 
                                     //TODO
                                     break;
@@ -217,8 +309,6 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
     @Override
     public void retry(View view) {
 
-        dialogFragment.getDialog().hide();
-
         if (loadingScreen.getVisibility() == View.INVISIBLE) {
             loadingScreen.setVisibility(View.VISIBLE);
         }
@@ -247,6 +337,26 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
                 }
                 break;
             }
+
+            case G_SIGNIN: {
+                googleAuthentication(null);
+                break;
+            }
+
+            case F_SIGNIN: {
+                facebookAuthentication(null);
+                break;
+            }
+
+            case G_SIGNUP: {
+                //TODO
+                break;
+            }
+
+            case F_SIGNUP: {
+                //TODO
+                break;
+            }
         }
 
     }
@@ -265,7 +375,11 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
     public enum ActivityAction {
         DEFAULT,
         SIGNIN,
-        SIGNUP
+        SIGNUP,
+        G_SIGNIN,
+        G_SIGNUP,
+        F_SIGNIN,
+        F_SIGNUP
     }
 
     public class SectionsPagerAdapter extends FragmentPagerAdapter {

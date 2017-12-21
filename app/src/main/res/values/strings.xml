@@ -24,4 +24,8 @@
     <string name="invalid_email">Invalid email address!</string>
     <string name="default_google_web_clientid">556974069498-c9uam1j6srrgl24er0j3diak4sa5m3vj.apps.googleusercontent.com</string>
     <string name="update_playservice">Please update your Google Play Service.</string>
+
+
+    <string name="facebook_app_id">256580834872878</string>
+    <string name="fb_login_protocol_scheme">fb256580834872878</string>
 </resources>

@@ -38,7 +38,6 @@ public class AuthenticationFragment extends Fragment {
     private View rootView;
 
     public AuthenticationFragment() {
-        activity = ((AuthenticationActivity)getActivity());
         rootView = null;
 
     }
@@ -92,7 +91,8 @@ public class AuthenticationFragment extends Fragment {
         googleSignInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                activity.ACTION = AuthenticationActivity.ActivityAction.SIGNIN;
+                activity = ((AuthenticationActivity)getActivity());
+                activity.ACTION = AuthenticationActivity.ActivityAction.G_SIGNIN;
                 activity.googleAuthentication(view);
             }
         });
@@ -100,7 +100,9 @@ public class AuthenticationFragment extends Fragment {
         facebookSignInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                activity = ((AuthenticationActivity)getActivity());
+                activity.ACTION = AuthenticationActivity.ActivityAction.F_SIGNIN;
+                activity.facebookAuthentication(view);
             }
         });
     }
