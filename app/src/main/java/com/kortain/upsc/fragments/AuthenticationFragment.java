@@ -24,6 +24,7 @@ public class AuthenticationFragment extends Fragment {
      * fragment.
      */
     private static final String ARG_SECTION_NUMBER = "section_number";
+    private AuthenticationActivity activity;
     private static EditText signInEmailId;
     private static EditText signInPassword;
     private static EditText signUpEmailId;
@@ -32,11 +33,12 @@ public class AuthenticationFragment extends Fragment {
     private static EditText signupName;
     private static Button signInButton;
     private static Button signUpButton;
-    private static Button googleButton;
-    private static Button facebookButton;
+    private static Button googleSignInButton;
+    private static Button facebookSignInButton;
     private View rootView;
 
     public AuthenticationFragment() {
+        activity = ((AuthenticationActivity)getActivity());
         rootView = null;
 
     }
@@ -71,16 +73,34 @@ public class AuthenticationFragment extends Fragment {
         signInEmailId = rootView.findViewById(R.id.al_signin_email_editText);
         signInPassword = rootView.findViewById(R.id.al_signin_password_editText);
         signInButton = rootView.findViewById(R.id.al_signin_button);
+        googleSignInButton = rootView.findViewById(R.id.al_signin_google_button);
+        facebookSignInButton = rootView.findViewById(R.id.al_signin_facebook_button);
 
         signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (StringUtility.validate(signInEmailId.getText().toString())) {
+                    activity.ACTION = AuthenticationActivity.ActivityAction.SIGNIN;
                     ((AuthenticationActivity) getActivity())
                             .signIn(signInEmailId.getText().toString(), signInPassword.getText().toString());
                 } else {
                     Toast.makeText(getActivity(), R.string.invalid_email, Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        googleSignInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                activity.ACTION = AuthenticationActivity.ActivityAction.SIGNIN;
+                activity.googleAuthentication(view);
+            }
+        });
+
+        facebookSignInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
             }
         });
     }
@@ -91,32 +111,19 @@ public class AuthenticationFragment extends Fragment {
         signUpEmailId = rootView.findViewById(R.id.al_signup_email_editText);
         signUpPassword = rootView.findViewById(R.id.al_signup_password_editText);
         signUpButton = rootView.findViewById(R.id.al_signup_button);
-        googleButton = rootView.findViewById(R.id.al_signin_google_button);
-        facebookButton = rootView.findViewById(R.id.al_signin_facebook_button);
+
+
 
         signUpButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (StringUtility.validate(signUpEmailId.getText().toString())) {
+                    activity.ACTION = AuthenticationActivity.ActivityAction.SIGNUP;
                     ((AuthenticationActivity) getActivity())
                             .signUp(signUpEmailId.getText().toString(), signUpPassword.getText().toString());
                 } else {
                     Toast.makeText(getActivity(), R.string.invalid_email, Toast.LENGTH_SHORT).show();
                 }
-            }
-        });
-
-        googleButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-            }
-        });
-
-        facebookButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
             }
         });
     }
