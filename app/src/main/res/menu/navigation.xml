@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/action_home"
+        android:title="@string/action_home"
+        android:icon="@drawable/ic_home" />
+
+    <item android:id="@+id/action_objective"
+        android:title="@string/action_objective"
+        android:icon="@drawable/ic_objective" />
+
+    <item android:id="@+id/action_subjective"
+        android:title="@string/action_subjective"
+        android:icon="@drawable/ic_subjective" />
+
+    <item android:id="@+id/action_exam"
+        android:title="@string/action_mock_exam"
+        android:icon="@drawable/ic_exam" />
+
+    <item android:id="@+id/action_menu"
+        android:title="@string/action_menu"
+        android:icon="@drawable/ic_menu" />
+
+</menu>

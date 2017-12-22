@@ -9,10 +9,10 @@
     <color name="colorTextRegular">#744a4a4a</color>
     <color name="colorTextBlack">#000000</color>
 
-    <color name="colorBackground">#EBEBEB</color>
+    <color name="colorBackground">#ebebeb</color>
     <color name="colorBackgroundMid">#D8D8D8</color>
     <color name="colorBackgroundDark">#9b9b9b</color>
     <color name="colorBackgroundWhite">#FFFFFF</color>
-    <color name="colorBackgroundLight">#F7F7F7</color>
+    <color name="colorBackgroundLight">#f7f7f7</color>
     <color name="facebook">#3B5998</color>
 </resources>

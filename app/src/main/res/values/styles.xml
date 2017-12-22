@@ -15,4 +15,8 @@
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="BottomNavigationView" parent="Widget.Design.BottomNavigationView">
+        <item name="fontFamily">@font/lobster_regular</item>
+    </style>
 </resources>
