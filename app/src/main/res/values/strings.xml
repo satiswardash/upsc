@@ -37,4 +37,10 @@
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
+    <string name="log_out">LOG OUT</string>
+    <string name="view_profile">View Profile</string>
+    <string name="home">Home</string>
+    <string name="obj_gallery">Objective Gallery</string>
+    <string name="sub_gallery">Subjective Gallery</string>
+    <string name="exam_center">Exam Center</string>
 </resources>

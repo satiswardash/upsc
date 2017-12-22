@@ -23,6 +23,7 @@ public class App extends Application {
 
     public static void authenticate(Context context){
         if (user == null){
+            //TODO
             Intent intent = new Intent(context, AuthenticationActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
