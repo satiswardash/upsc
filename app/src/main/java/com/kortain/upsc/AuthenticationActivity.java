@@ -37,6 +37,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.kortain.upsc.fragments.AuthenticationFragment;
 import com.kortain.upsc.fragments.NoNetworkAlertDialog;
+import com.kortain.upsc.helpers.App;
 import com.kortain.upsc.utils.FirebaseUtility;
 import com.kortain.upsc.utils.NetworkUtility;
 

@@ -1,11 +1,9 @@
 package com.kortain.upsc;
 
-import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import com.google.firebase.auth.FirebaseUser;
-import com.kortain.upsc.utils.FirebaseUtility;
+import com.kortain.upsc.helpers.App;
 
 public class SplashActivity extends AppCompatActivity {
 

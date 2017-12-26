@@ -1,4 +1,4 @@
-package com.kortain.upsc;
+package com.kortain.upsc.helpers;
 
 import android.app.Application;
 import android.content.Context;
@@ -6,6 +6,8 @@ import android.content.Intent;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.kortain.upsc.AuthenticationActivity;
+import com.kortain.upsc.MainActivity;
 
 /**
  * Created by satiswardash on 19/12/17.

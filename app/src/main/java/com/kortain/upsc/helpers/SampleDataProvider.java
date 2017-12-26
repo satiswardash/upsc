@@ -1,4 +1,4 @@
-package com.kortain.upsc;
+package com.kortain.upsc.helpers;
 
 import com.kortain.upsc.models.ApplicationData;
 import com.kortain.upsc.models.Comment;

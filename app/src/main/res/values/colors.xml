@@ -10,7 +10,7 @@
     <color name="colorTextBlack">#000000</color>
 
     <color name="colorBackground">#ebebeb</color>
-    <color name="colorBackgroundMid">#D8D8D8</color>
+    <color name="colorBackgroundMid">#d8d8d8</color>
     <color name="colorBackgroundDark">#9b9b9b</color>
     <color name="colorBackgroundWhite">#FFFFFF</color>
     <color name="colorBackgroundLight">#f7f7f7</color>
