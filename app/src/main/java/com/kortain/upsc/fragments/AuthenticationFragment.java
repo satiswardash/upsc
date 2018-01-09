@@ -75,6 +75,7 @@ public class AuthenticationFragment extends Fragment {
     }
 
     private void initSignInLayout() {
+        //added
         signInEmailId = rootView.findViewById(R.id.al_signin_email_editText);
         signInPassword = rootView.findViewById(R.id.al_signin_password_editText);
         signInButton = rootView.findViewById(R.id.al_signin_button);
