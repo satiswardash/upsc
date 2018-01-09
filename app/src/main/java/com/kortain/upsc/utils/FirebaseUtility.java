@@ -1,15 +1,24 @@
 package com.kortain.upsc.utils;
 
 import android.content.Context;
-import android.net.Uri;
 import android.support.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.UserProfileChangeRequest;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+import com.kortain.upsc.R;
+import com.kortain.upsc.firestore_models.User;
+import com.kortain.upsc.helpers.Constants;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by satiswardash on 19/12/17.
@@ -37,12 +46,37 @@ public class FirebaseUtility {
         return instance;
     }
 
-    public static FirebaseAuth getFirebaseAuth() {
+    public static final FirebaseAuth getFirebaseAuth() {
         return FirebaseAuth.getInstance();
     }
 
-    public static FirebaseUser getFirebaseUser(FirebaseAuth auth) {
-        return auth.getCurrentUser();
+    public static final FirebaseUser getFirebaseUser(FirebaseAuth auth) { return auth.getCurrentUser(); }
+
+    public static final String getCurrentUserId(){ return FirebaseAuth.getInstance().getCurrentUser().getUid(); }
+
+    public static final FirebaseFirestore getFirebaseFirestore() { return FirebaseFirestore.getInstance(); }
+
+    /**
+     * getUserFromFirestore
+     *
+     * @param id
+     * @return DocumentSnapshot
+     */
+    public void getUserFromFirestore(String id){
+        FirebaseFirestore.getInstance()
+                .collection(Constants.FIRESTORE_COLLECTIONS_USERS)
+                .document(id)
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                        if (task.isSuccessful()) {
+                            DocumentSnapshot snapshot = task.getResult();
+                            mCallbacks.onSuccess(snapshot.getData(), 1);
+                        }
+                    }
+                });
+
     }
 
     /**
@@ -62,44 +96,110 @@ public class FirebaseUtility {
                         if (task.isSuccessful()) {
                             FirebaseUser user = task.getResult().getUser();
                             if (user.isEmailVerified()) {
-                                mCallbacks.isSuccessful(user, 21);
+                                Map<String, Object> fsUser = new HashMap<>();
+                                fsUser.put("uid", user.getUid());
+                                mCallbacks.onSuccess(fsUser, SIGNIN_SUCCESS_VERIFIED);
                             } else {
-                                mCallbacks.isSuccessful(user, 22);
+                                mCallbacks.onSuccess(null, SIGNIN_SUCCESS_UNVERIFIED);
                             }
                         } else {
-                            mCallbacks.isFailure(task.getException().getMessage());
+                            mCallbacks.onFailure(task.getException().getMessage());
                         }
                     }
                 });
     }
 
     /**
-     * signUpWithEmailAndPassword
+     * signUpWithUserDto
      *
-     * @param email
-     * @param password
-     * @param auth
+     * @param userDto
      */
-    public void signUpWithEmailAndPassword(String email, String password, FirebaseAuth auth) {
+    public void signUpWithEmailAndPassword(final Map<String, Object> userDto) {
 
-        auth.createUserWithEmailAndPassword(email, password)
+        if (!userDto.containsKey(Constants.AUTH_USER_EMAIL)) {
+            mCallbacks.onFailure(mContext.getString(R.string.NO_EMAIL_KEY));
+            return;
+        }
+        if (!userDto.containsKey(Constants.AUTH_USER_PASSWORD)) {
+            mCallbacks.onFailure(mContext.getString(R.string.NO_PASSWORD_KEY));
+            return;
+        }
+        if (!userDto.containsKey(Constants.AUTH_USER_PHONE)) {
+            mCallbacks.onFailure(mContext.getString(R.string.NO_PHONE_KEY));
+            return;
+        }
+        if (!userDto.containsKey(Constants.AUTH_USER_DISPLAY_NAME)) {
+            mCallbacks.onFailure(mContext.getString(R.string.NO_NAME_KEY));
+            return;
+        }
+
+        FirebaseAuth.getInstance().createUserWithEmailAndPassword(
+                (String) userDto.get(Constants.AUTH_USER_EMAIL), (String) userDto.get(Constants.AUTH_USER_PASSWORD))
                 .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
                             FirebaseUser user = task.getResult().getUser();
-                            user.sendEmailVerification();
-                            mCallbacks.isSuccessful(user, 11);
+                            addUserToFireStore(user.getUid(), userDto, SetOptions.merge());
                         } else {
-                            mCallbacks.isFailure(task.getException().getMessage());
+                            mCallbacks.onFailure(task.getException().getMessage());
                         }
                     }
                 });
+
+    }
+
+    /**
+     * addUserToFireStore
+     *
+     * @param uid
+     * @param userDto
+     * @param options
+     */
+    public void addUserToFireStore(final String uid, final Map<String, Object> userDto, final SetOptions options) {
+        final FirebaseAuth auth = FirebaseAuth.getInstance();
+        auth.signInWithEmailAndPassword(
+                (String) userDto.get(Constants.AUTH_USER_EMAIL),
+                (String) userDto.get(Constants.AUTH_USER_PASSWORD))
+                .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+
+                        final FirebaseUser user = task.getResult().getUser();
+
+                        if (task.isSuccessful()) {
+                            if (userDto.containsKey(Constants.AUTH_USER_PASSWORD)) {
+                                userDto.remove(Constants.AUTH_USER_PASSWORD);
+                            }
+
+                            FirebaseFirestore.getInstance()
+                                    .collection(Constants.FIRESTORE_COLLECTIONS_USERS)
+                                    .document(uid)
+                                    .set(userDto, options)
+                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void aVoid) {
+                                            userDto.put("uid", user.getUid());
+                                            user.sendEmailVerification();
+                                            auth.signOut();
+                                            mCallbacks.onSuccess(userDto, SIGNUP_SUCCESS);
+                                        }
+                                    }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    mCallbacks.onFailure(e.getMessage());
+                                }
+                            });
+                        }
+
+                    }
+                });
+
+
     }
 
     public interface FirebaseUtilityCallbacks {
-        void isSuccessful(FirebaseUser firebaseUser, int flag);
-
-        void isFailure(String message);
+        void onSuccess(Map<String, Object> user, int flag);
+        void onFailure(String message);
     }
 }

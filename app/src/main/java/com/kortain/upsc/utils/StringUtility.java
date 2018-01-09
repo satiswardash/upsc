@@ -13,9 +13,6 @@ public class StringUtility {
      * @return
      */
     public static boolean validate(String s) {
-        if (s.contains("@")) {
-            return true;
-        }
-        return false;
+        return true;
     }
 }

@@ -11,7 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.kortain.upsc.R;
-import com.kortain.upsc.models.MenuItem;
+import com.kortain.upsc.models.ProfileMenuItem;
 
 import java.util.List;
 
@@ -19,16 +19,16 @@ import java.util.List;
  * Created by satiswardash on 26/12/17.
  */
 
-public class ProfileMenuItemAdapter extends ArrayAdapter<MenuItem> {
+public class ProfileMenuItemAdapter extends ArrayAdapter<ProfileMenuItem> {
 
     Context mContext;
-    List<MenuItem> mItemList;
+    List<ProfileMenuItem> mItemList;
 
-    public ProfileMenuItemAdapter(@NonNull Context context, @NonNull List<MenuItem> menuItems) {
-        super(context, R.layout.layout_profile_bottom_menuitem, menuItems);
+    public ProfileMenuItemAdapter(@NonNull Context context, @NonNull List<ProfileMenuItem> profileMenuItems) {
+        super(context, R.layout.viewgroup_profile_bottom_menuitem, profileMenuItems);
 
         mContext = context;
-        mItemList = menuItems;
+        mItemList = profileMenuItems;
     }
 
     @NonNull
@@ -36,7 +36,7 @@ public class ProfileMenuItemAdapter extends ArrayAdapter<MenuItem> {
     public View getView(final int position, @Nullable View convertView, @NonNull ViewGroup parent) {
 
         View rootView = null;
-        rootView = LayoutInflater.from(mContext).inflate(R.layout.layout_profile_bottom_menuitem, parent, false);
+        rootView = LayoutInflater.from(mContext).inflate(R.layout.viewgroup_profile_bottom_menuitem, parent, false);
 
         ImageView imageView = rootView.findViewById(R.id.cl_profile_imageView);
         TextView textView = rootView.findViewById(R.id.cl_profile_menuItem_textView);

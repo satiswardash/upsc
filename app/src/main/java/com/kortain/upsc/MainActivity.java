@@ -1,6 +1,7 @@
 package com.kortain.upsc;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
@@ -19,15 +20,24 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.kortain.upsc.adapters.ProfileMenuItemAdapter;
+import com.kortain.upsc.firestore_models.User;
 import com.kortain.upsc.helpers.App;
+import com.kortain.upsc.helpers.Constants;
 import com.kortain.upsc.helpers.LayoutHelper;
 import com.kortain.upsc.models.ConstraintRules;
+import com.kortain.upsc.models.ProfileMenuItem;
+import com.kortain.upsc.utils.FirebaseUtility;
 import com.kortain.upsc.widgets.BottomNavigationBar;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -130,8 +140,13 @@ public class MainActivity extends AppCompatActivity {
                 ImageView iv = rootView.findViewById(R.id.m_profile_imageView);
                 ListView listView = rootView.findViewById(R.id.m_menu_listView);
 
-                Picasso.with(getApplicationContext()).load(App.user.getPhotoUrl()).into(iv);
-                tv.setText(App.user.getDisplayName());
+                if (App.user != null) {
+                    tv.setText(App.user.getDisplayName());
+                    if (App.user.getPhotoUrl()!= null) {
+                        Picasso.with(getApplicationContext()).load(App.user.getPhotoUrl()).into(iv);
+                    }
+                }
+
                 viewProfile.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -144,8 +159,8 @@ public class MainActivity extends AppCompatActivity {
                 listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                     @Override
                     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                        com.kortain.upsc.models.MenuItem menuItem = (com.kortain.upsc.models.MenuItem) adapterView.getItemAtPosition(i);
-                        Toast.makeText(MainActivity.this, menuItem.getTitle(), Toast.LENGTH_SHORT).show();
+                        ProfileMenuItem profileMenuItem = (ProfileMenuItem) adapterView.getItemAtPosition(i);
+                        Toast.makeText(MainActivity.this, profileMenuItem.getTitle(), Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -179,16 +194,15 @@ public class MainActivity extends AppCompatActivity {
      *
      * @return
      */
-    private List<com.kortain.upsc.models.MenuItem> getMenuItems() {
+    private List<ProfileMenuItem> getMenuItems() {
 
-        List<com.kortain.upsc.models.MenuItem> items = new ArrayList<>();
+        List<ProfileMenuItem> items = new ArrayList<>();
 
         for (int index = 0; index < INDEX_COUNT; index++) {
-            items.add(new com.kortain.upsc.models.MenuItem(null, MENU_IMAGES[index], MAIN_MENU_ITEMS[index]));
+            items.add(new ProfileMenuItem(null, MENU_IMAGES[index], MAIN_MENU_ITEMS[index]));
         }
 
         return items;
     }
-
 
 }

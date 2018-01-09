@@ -11,7 +11,11 @@ import android.widget.Toast;
 
 import com.kortain.upsc.AuthenticationActivity;
 import com.kortain.upsc.R;
+import com.kortain.upsc.helpers.Constants;
 import com.kortain.upsc.utils.StringUtility;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by satiswardash on 20/12/17.
@@ -35,6 +39,8 @@ public class AuthenticationFragment extends Fragment {
     private static Button signUpButton;
     private static Button googleSignInButton;
     private static Button facebookSignInButton;
+    private static Button googleSignUpButton;
+    private static Button facebookSignUpButton;
     private View rootView;
 
     public AuthenticationFragment() {
@@ -113,19 +119,46 @@ public class AuthenticationFragment extends Fragment {
         signUpEmailId = rootView.findViewById(R.id.al_signup_email_editText);
         signUpPassword = rootView.findViewById(R.id.al_signup_password_editText);
         signUpButton = rootView.findViewById(R.id.al_signup_button);
+        googleSignUpButton = rootView.findViewById(R.id.al_signup_google_button);
+        facebookSignUpButton = rootView.findViewById(R.id.al_signup_facebook_button);
 
 
+        final Map<String, Object> userDto = new HashMap<>();
 
         signUpButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (StringUtility.validate(signUpEmailId.getText().toString())) {
+
+                    userDto.put(Constants.AUTH_USER_DISPLAY_NAME, signupName.getText().toString());
+                    userDto.put(Constants.AUTH_USER_PHONE, signupPhone.getText().toString());
+                    userDto.put(Constants.AUTH_USER_EMAIL, signUpEmailId.getText().toString());
+                    userDto.put(Constants.AUTH_USER_PASSWORD, signUpPassword.getText().toString());
                     activity.ACTION = AuthenticationActivity.ActivityAction.SIGNUP;
+
                     ((AuthenticationActivity) getActivity())
-                            .signUp(signUpEmailId.getText().toString(), signUpPassword.getText().toString());
+                            .signUp(userDto);
                 } else {
                     Toast.makeText(getActivity(), R.string.invalid_email, Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        googleSignUpButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                activity = ((AuthenticationActivity)getActivity());
+                activity.ACTION = AuthenticationActivity.ActivityAction.G_SIGNUP;
+                activity.googleAuthentication(view);
+            }
+        });
+
+        facebookSignUpButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                activity = ((AuthenticationActivity)getActivity());
+                activity.ACTION = AuthenticationActivity.ActivityAction.F_SIGNUP;
+                activity.facebookAuthentication(view);
             }
         });
     }

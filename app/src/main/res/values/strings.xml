@@ -43,4 +43,10 @@
     <string name="obj_gallery">Objective Gallery</string>
     <string name="sub_gallery">Subjective Gallery</string>
     <string name="exam_center">Exam Center</string>
+    <string name="NO_EMAIL_KEY">User emailId key is missing.</string>
+    <string name="NO_PASSWORD_KEY">User password key is missing.</string>
+    <string name="NO_PHONE_KEY">User phone key is missing.</string>
+    <string name="NO_NAME_KEY">User display name key is missing.</string>
+    <string name="ACCOUNT_CREATED_SUCCESS">Account successfully created, kindly verify your email before signin.</string>
+    <string name="FAILED_FETCHING_ACCOUNT">Failed to fetch account information!</string>
 </resources>

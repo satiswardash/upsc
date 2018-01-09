@@ -6,16 +6,16 @@ import java.util.UUID;
  * Created by satiswardash on 26/12/17.
  */
 
-public class MenuItem {
+public class ProfileMenuItem {
 
     private String id;
     private int image;
     private String title;
 
-    public MenuItem() {
+    public ProfileMenuItem() {
     }
 
-    public MenuItem(String id, int image, String title) {
+    public ProfileMenuItem(String id, int image, String title) {
         if(id == null){
             id = UUID.randomUUID().toString();
         }

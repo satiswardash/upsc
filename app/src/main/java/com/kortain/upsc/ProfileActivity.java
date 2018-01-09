@@ -10,7 +10,7 @@ import android.widget.Toast;
 
 import com.kortain.upsc.adapters.ProfileMenuItemAdapter;
 import com.kortain.upsc.helpers.App;
-import com.kortain.upsc.models.MenuItem;
+import com.kortain.upsc.models.ProfileMenuItem;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -46,8 +46,8 @@ public class ProfileActivity extends AppCompatActivity {
         mProfileMenuListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                MenuItem menuItem = (MenuItem) adapterView.getItemAtPosition(i);
-                Toast.makeText(ProfileActivity.this, menuItem.getId(), Toast.LENGTH_SHORT).show();
+                ProfileMenuItem profileMenuItem = (ProfileMenuItem) adapterView.getItemAtPosition(i);
+                Toast.makeText(ProfileActivity.this, profileMenuItem.getId(), Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -67,11 +67,11 @@ public class ProfileActivity extends AppCompatActivity {
      *
      * @return
      */
-    private List<MenuItem> getMenuItems() {
+    private List<ProfileMenuItem> getMenuItems() {
 
-        List<MenuItem> items = new ArrayList<>();
+        List<ProfileMenuItem> items = new ArrayList<>();
         for (int index = 0; index < INDEX_COUNT; index++) {
-            items.add(new MenuItem(null, MENU_IMAGES[index], PROFILE_MENU_ITEMS[index]));
+            items.add(new ProfileMenuItem(null, MENU_IMAGES[index], PROFILE_MENU_ITEMS[index]));
         }
 
         return items;

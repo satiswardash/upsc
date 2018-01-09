@@ -1,5 +1,6 @@
 package com.kortain.upsc;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -28,6 +29,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
@@ -35,42 +37,49 @@ import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+import com.kortain.upsc.firestore_models.User;
 import com.kortain.upsc.fragments.AuthenticationFragment;
 import com.kortain.upsc.fragments.NoNetworkAlertDialog;
 import com.kortain.upsc.helpers.App;
+import com.kortain.upsc.helpers.Constants;
 import com.kortain.upsc.utils.FirebaseUtility;
 import com.kortain.upsc.utils.NetworkUtility;
+import com.kortain.upsc.utils.StringUtility;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.kortain.upsc.utils.FirebaseUtility.FirebaseUtilityCallbacks;
 
 public class AuthenticationActivity extends AppCompatActivity implements FirebaseUtilityCallbacks, NoNetworkAlertDialog.NoNetworkDialogListeners {
 
-    private static final int RC_SIGN_IN = 420;
     public static ActivityAction ACTION = ActivityAction.DEFAULT;
-    GoogleSignInAccount account;
+    private final int RC_SIGN_IN = 420;
+    private final String[] permissions = {"email", "public_profile"};
+    private final Context mContext = AuthenticationActivity.this;
     private ConstraintLayout loadingScreen;
-    private SectionsPagerAdapter mSectionsPagerAdapter;
-    private ViewPager mViewPager;
     private Toolbar toolbar;
     private TabLayout tabLayout;
     private DialogFragment dialogFragment;
+    private ViewPager mViewPager;
+    private SectionsPagerAdapter mSectionsPagerAdapter;
     private GoogleSignInOptions gso;
     private GoogleSignInClient mGoogleSignInClient;
     private CallbackManager mFacebookCallbackManager;
 
+    /**
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_authentication);
-
         init();
-
-        if (loadingScreen.getVisibility() == View.VISIBLE) {
-            loadingScreen.setVisibility(View.INVISIBLE);
-        }
-
+        setLoadingScreen(false);
         setSupportActionBar(toolbar);
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
@@ -88,105 +97,14 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
         mFacebookCallbackManager = CallbackManager.Factory.create();
     }
 
-    void init() {
-        loadingScreen = findViewById(R.id.loading);
-        toolbar = findViewById(R.id.toolbar);
-        mViewPager = findViewById(R.id.container);
-        tabLayout = findViewById(R.id.tabs);
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-    }
-
-    public void facebookAuthentication(View view) {
-
-        if (NetworkUtility.hasNetworkAccess(this)) {
-            if (loadingScreen.getVisibility() == View.INVISIBLE) {
-                loadingScreen.setVisibility(View.VISIBLE);
-            }
-            String[] permissions = {"email", "public_profile"};
-            LoginManager loginManager = LoginManager.getInstance();
-
-            loginManager.logInWithReadPermissions(this, Arrays.asList(permissions));
-            LoginManager.getInstance().registerCallback(mFacebookCallbackManager, new FacebookCallback<LoginResult>() {
-                @Override
-                public void onSuccess(LoginResult loginResult) {
-                    if (loadingScreen.getVisibility() == View.VISIBLE) {
-                        loadingScreen.setVisibility(View.INVISIBLE);
-                    }
-                    handleFacebookAccessToken(loginResult.getAccessToken());
-                }
-
-                @Override
-                public void onCancel() {
-                    if (loadingScreen.getVisibility() == View.VISIBLE) {
-                        loadingScreen.setVisibility(View.INVISIBLE);
-                    }
-                    //TODO
-                }
-
-                @Override
-                public void onError(FacebookException error) {
-                    if (loadingScreen.getVisibility() == View.VISIBLE) {
-                        loadingScreen.setVisibility(View.INVISIBLE);
-                    }
-                    //TODO
-                }
-            });
-        } else {
-            showNoNetworkDialog();
-        }
-    }
-
-    public void googleAuthentication(View view) {
-
-        if (NetworkUtility.hasNetworkAccess(this)) {
-            if (loadingScreen.getVisibility() == View.INVISIBLE) {
-                loadingScreen.setVisibility(View.VISIBLE);
-            }
-            Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-            startActivityForResult(signInIntent, RC_SIGN_IN);
-        } else {
-            showNoNetworkDialog();
-        }
-
-    }
-
-    public void signIn(String email, String password) {
-        if (NetworkUtility.hasNetworkAccess(this)) {
-            if (loadingScreen.getVisibility() == View.INVISIBLE) {
-                loadingScreen.setVisibility(View.VISIBLE);
-            }
-            FirebaseUtility.getInstance(getApplicationContext(), this)
-                    .signInWithEmailAndPassword(
-                            email,
-                            password,
-                            FirebaseUtility.getFirebaseAuth());
-        } else {
-            showNoNetworkDialog();
-        }
-    }
-
-    public void signUp(String email, String password) {
-
-        if (NetworkUtility.hasNetworkAccess(this)) {
-            if (loadingScreen.getVisibility() == View.INVISIBLE) {
-                loadingScreen.setVisibility(View.VISIBLE);
-            }
-            FirebaseUtility.getInstance(getApplicationContext(), this)
-                    .signUpWithEmailAndPassword(
-                            email,
-                            password,
-                            FirebaseUtility.getFirebaseAuth());
-        } else {
-            showNoNetworkDialog();
-        }
-    }
-
+    /**
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (loadingScreen.getVisibility() == View.VISIBLE) {
-            loadingScreen.setVisibility(View.INVISIBLE);
-        }
         // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
@@ -202,118 +120,48 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
         }
     }
 
-    private void handleFacebookAccessToken(AccessToken token) {
-        final FirebaseAuth mAuth = FirebaseUtility.getFirebaseAuth();
-        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            FirebaseUser firebaseUser = mAuth.getCurrentUser();
-                            switch (ACTION) {
-                                case F_SIGNIN: {
-                                    App.user = firebaseUser;
-                                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                                    startActivity(intent);
-                                    finishAffinity();
-                                    break;
-                                }
-                                case F_SIGNUP: {
-
-                                    //TODO
-                                    break;
-                                }
-                            }
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Toast.makeText(AuthenticationActivity.this, "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-    }
-
-    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
-        final FirebaseAuth auth = FirebaseUtility.getFirebaseAuth();
-        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
-        auth.signInWithCredential(credential)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            FirebaseUser firebaseUser = auth.getCurrentUser();
-                            switch (ACTION) {
-                                case G_SIGNIN: {
-                                    App.user = firebaseUser;
-                                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                                    startActivity(intent);
-                                    finishAffinity();
-                                    break;
-                                }
-                                case G_SIGNUP: {
-
-                                    //TODO
-                                    break;
-                                }
-                            }
-
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Toast.makeText(AuthenticationActivity.this, task.getException().getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                    }
-                });
-    }
-
+    /**
+     * @param user
+     * @param flag
+     */
     @Override
-    public void isSuccessful(FirebaseUser firebaseUser, int flag) {
-
-        if (loadingScreen.getVisibility() == View.VISIBLE) {
-            loadingScreen.setVisibility(View.INVISIBLE);
-        }
+    public void onSuccess(Map<String, Object> user, int flag) {
 
         switch (flag) {
 
             case FirebaseUtility.SIGNIN_SUCCESS_UNVERIFIED: {
+                setLoadingScreen(false);
                 Toast.makeText(getApplicationContext(), R.string.email_not_verified, Toast.LENGTH_SHORT).show();
                 break;
             }
             case FirebaseUtility.SIGNIN_SUCCESS_VERIFIED: {
-                App.user = firebaseUser;
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                startActivity(intent);
-                finishAffinity();
+                handleOnSuccessVerifiedSignin();
                 break;
             }
             case FirebaseUtility.SIGNUP_SUCCESS: {
-                //TODO
-                Toast.makeText(getApplicationContext(), getString(R.string.account_created) + firebaseUser.getUid(), Toast.LENGTH_SHORT).show();
+                setLoadingScreen(false);
+                Toast.makeText(this,
+                        R.string.ACCOUNT_CREATED_SUCCESS, Toast.LENGTH_SHORT).show();
                 break;
             }
         }
-
     }
 
+    /**
+     * @param message
+     */
     @Override
-    public void isFailure(String message) {
-
-        if (loadingScreen.getVisibility() == View.VISIBLE) {
-            loadingScreen.setVisibility(View.INVISIBLE);
-        }
-
+    public void onFailure(String message) {
+        setLoadingScreen(false);
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
     }
 
+    /**
+     * @param view
+     */
     @Override
     public void retry(View view) {
-
-        if (loadingScreen.getVisibility() == View.INVISIBLE) {
-            loadingScreen.setVisibility(View.VISIBLE);
-        }
-
+        setLoadingScreen(true);
         switch (ACTION) {
 
             case SIGNIN: {
@@ -321,20 +169,25 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
                 EditText email = findViewById(R.id.al_signin_email_editText);
                 EditText password = findViewById(R.id.al_signin_password_editText);
 
-                if (email.getText().toString() != "" && password.getText().toString() != "") {
-
+                if (StringUtility.validate(email.getText().toString()) && StringUtility.validate(password.getText().toString())) {
                     signIn(email.getText().toString(), password.getText().toString());
                 }
                 break;
             }
             case SIGNUP: {
 
-                EditText email = findViewById(R.id.al_signup_email_editText);
-                EditText password = findViewById(R.id.al_signup_password_editText);
+                EditText signUpEmailId = findViewById(R.id.al_signup_email_editText);
+                EditText signUpPassword = findViewById(R.id.al_signup_password_editText);
+                EditText signupName = findViewById(R.id.al_signup_name_editText);
+                EditText signupPhone = findViewById(R.id.al_signup_phone_editText);
 
-                if (email.getText().toString() != "" && password.getText().toString() != "") {
-
-                    signUp(email.getText().toString(), password.getText().toString());
+                if (StringUtility.validate(signUpEmailId.getText().toString()) && StringUtility.validate(signUpPassword.getText().toString())) {
+                    Map<String, Object> userDto = new HashMap<>();
+                    userDto.put(Constants.AUTH_USER_DISPLAY_NAME, signupName.getText().toString());
+                    userDto.put(Constants.AUTH_USER_PHONE, signupPhone.getText().toString());
+                    userDto.put(Constants.AUTH_USER_EMAIL, signUpEmailId.getText().toString());
+                    userDto.put(Constants.AUTH_USER_PASSWORD, signUpPassword.getText().toString());
+                    signUp(userDto);
                 }
                 break;
             }
@@ -350,23 +203,345 @@ public class AuthenticationActivity extends AppCompatActivity implements Firebas
             }
 
             case G_SIGNUP: {
-                //TODO
+                googleAuthentication(null);
                 break;
             }
 
             case F_SIGNUP: {
-                //TODO
+                facebookAuthentication(null);
                 break;
             }
         }
 
     }
 
-    private void showNoNetworkDialog() {
-        if (loadingScreen.getVisibility() == View.VISIBLE) {
-            loadingScreen.setVisibility(View.INVISIBLE);
+    /**
+     * @param view
+     */
+    public void facebookAuthentication(View view) {
+
+        if (NetworkUtility.hasNetworkAccess(this)) {
+            setLoadingScreen(true);
+            LoginManager loginManager = LoginManager.getInstance();
+
+            loginManager.logInWithReadPermissions(this, Arrays.asList(permissions));
+            LoginManager.getInstance().registerCallback(mFacebookCallbackManager, new FacebookCallback<LoginResult>() {
+                @Override
+                public void onSuccess(LoginResult loginResult) {
+                    setLoadingScreen(false);
+                    handleFacebookAccessToken(loginResult.getAccessToken());
+                }
+
+                @Override
+                public void onCancel() {
+                    setLoadingScreen(false);
+                }
+
+                @Override
+                public void onError(FacebookException error) {
+                    setLoadingScreen(false);
+                    Toast.makeText(mContext, error.toString(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            showNoNetworkDialog();
+        }
+    }
+
+    /**
+     * @param view
+     */
+    public void googleAuthentication(View view) {
+
+        if (NetworkUtility.hasNetworkAccess(this)) {
+            setLoadingScreen(true);
+            Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+            startActivityForResult(signInIntent, RC_SIGN_IN);
+        } else {
+            showNoNetworkDialog();
         }
 
+    }
+
+    /**
+     * @param email
+     * @param password
+     */
+    public void signIn(String email, String password) {
+        if (NetworkUtility.hasNetworkAccess(this)) {
+            setLoadingScreen(true);
+            FirebaseUtility.getInstance(getApplicationContext(), this)
+                    .signInWithEmailAndPassword(
+                            email,
+                            password,
+                            FirebaseUtility.getFirebaseAuth());
+        } else {
+            showNoNetworkDialog();
+        }
+    }
+
+    /**
+     * @param userDto
+     */
+    public void signUp(Map<String, Object> userDto) {
+        if (NetworkUtility.hasNetworkAccess(this)) {
+            setLoadingScreen(true);
+            FirebaseUtility.getInstance(getApplicationContext(), this)
+                    .signUpWithEmailAndPassword(
+                            userDto);
+        } else {
+            showNoNetworkDialog();
+        }
+    }
+
+    /**
+     *
+     */
+    private void init() {
+        loadingScreen = findViewById(R.id.loading);
+        toolbar = findViewById(R.id.toolbar);
+        mViewPager = findViewById(R.id.container);
+        tabLayout = findViewById(R.id.tabs);
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+    }
+
+    /**
+     * @param isVisible
+     */
+    private void setLoadingScreen(boolean isVisible) {
+        if (isVisible) {
+            if (loadingScreen.getVisibility() == View.INVISIBLE) {
+                loadingScreen.setVisibility(View.VISIBLE);
+            }
+        } else {
+            if (loadingScreen.getVisibility() == View.VISIBLE) {
+                loadingScreen.setVisibility(View.INVISIBLE);
+            }
+        }
+    }
+
+    /**
+     *
+     */
+    private void handleOnSuccessVerifiedSignin() {
+        if (App.fsUser == null) {
+            FirebaseUtility.getInstance(mContext, new FirebaseUtilityCallbacks() {
+                @Override
+                public void onSuccess(Map<String, Object> user, int flag) {
+                    if (user != null) {
+                        App.fsUser = User.convertFromMap(user);
+                        setLoadingScreen(false);
+                        Intent intent = new Intent(mContext, MainActivity.class);
+                        startActivity(intent);
+                        finishAffinity();
+                    }
+                }
+                @Override
+                public void onFailure(String message) {
+                    Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
+                }
+            }).getUserFromFirestore(FirebaseUtility.getCurrentUserId());
+        }
+    }
+
+    /**
+     * @param token
+     */
+    private void handleFacebookAccessToken(AccessToken token) {
+        final FirebaseAuth mAuth = FirebaseUtility.getFirebaseAuth();
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            final FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                            switch (ACTION) {
+                                case F_SIGNIN: {
+                                    FirebaseFirestore.getInstance()
+                                            .collection(Constants.FIRESTORE_COLLECTIONS_USERS)
+                                            .document(firebaseUser.getUid())
+                                            .get()
+                                            .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                                                    if (task.getResult().exists()) {
+                                                        setLoadingScreen(false);
+                                                        App.user = firebaseUser;
+                                                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                                        startActivity(intent);
+                                                        finishAffinity();
+                                                    } else {
+                                                        setLoadingScreen(false);
+                                                        firebaseUser.delete();
+                                                        Toast.makeText(AuthenticationActivity.this, R.string.FAILED_FETCHING_ACCOUNT, Toast.LENGTH_LONG).show();
+                                                    }
+                                                }
+                                            })
+                                            .addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    setLoadingScreen(false);
+                                                    firebaseUser.delete();
+                                                    Toast.makeText(mContext, e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                }
+                                            });
+                                    break;
+                                }
+                                case F_SIGNUP: {
+                                    Map<String, Object> user = new HashMap<>();
+                                    if (firebaseUser.getDisplayName() != null) {
+                                        user.put(Constants.AUTH_USER_DISPLAY_NAME, firebaseUser.getDisplayName());
+                                    }
+                                    if (firebaseUser.getEmail() != null) {
+                                        user.put(Constants.AUTH_USER_EMAIL, firebaseUser.getEmail());
+                                    }
+                                    if (firebaseUser.getPhoneNumber() != null) {
+                                        user.put(Constants.AUTH_USER_PHONE, firebaseUser.getPhoneNumber());
+                                    }
+                                    if (firebaseUser.getPhotoUrl() != null) {
+                                        user.put(Constants.AUTH_USER_PICTURE, firebaseUser.getPhotoUrl().getPath());
+                                    }
+                                    FirebaseFirestore.getInstance()
+                                            .collection(Constants.FIRESTORE_COLLECTIONS_USERS)
+                                            .document(firebaseUser.getUid())
+                                            .set(user, SetOptions.merge())
+                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    if (task.isSuccessful()) {
+                                                        setLoadingScreen(false);
+                                                        App.user = firebaseUser;
+                                                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                                        startActivity(intent);
+                                                        finishAffinity();
+                                                    } else {
+                                                        setLoadingScreen(false);
+                                                        firebaseUser.delete();
+                                                        Toast.makeText(AuthenticationActivity.this, R.string.FAILED_FETCHING_ACCOUNT, Toast.LENGTH_LONG).show();
+                                                    }
+                                                }
+                                            }).addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            setLoadingScreen(false);
+                                            Toast.makeText(mContext, e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                    break;
+                                }
+                            }
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Toast.makeText(AuthenticationActivity.this, "Authentication failed.",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+    }
+
+    /**
+     * @param acct
+     */
+    private void firebaseAuthWithGoogle(GoogleSignInAccount acct) {
+        final FirebaseAuth auth = FirebaseUtility.getFirebaseAuth();
+        AuthCredential credential = GoogleAuthProvider.getCredential(acct.getIdToken(), null);
+        auth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            final FirebaseUser firebaseUser = auth.getCurrentUser();
+                            switch (ACTION) {
+                                case G_SIGNIN: {
+                                    FirebaseFirestore.getInstance()
+                                            .collection(Constants.FIRESTORE_COLLECTIONS_USERS)
+                                            .document(firebaseUser.getUid()).get()
+                                            .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                                                    if (task.getResult().exists()) {
+                                                        setLoadingScreen(false);
+                                                        App.user = firebaseUser;
+                                                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                                        startActivity(intent);
+                                                        finishAffinity();
+                                                    } else {
+                                                        setLoadingScreen(false);
+                                                        firebaseUser.delete();
+                                                        Toast.makeText(AuthenticationActivity.this, R.string.FAILED_FETCHING_ACCOUNT, Toast.LENGTH_LONG).show();
+                                                    }
+                                                }
+                                            }).addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            firebaseUser.delete();
+                                            setLoadingScreen(false);
+                                            Toast.makeText(AuthenticationActivity.this, R.string.FAILED_FETCHING_ACCOUNT, Toast.LENGTH_LONG).show();
+                                        }
+                                    });
+                                    break;
+                                }
+                                case G_SIGNUP: {
+                                    Map<String, Object> user = new HashMap<>();
+                                    if (firebaseUser.getDisplayName() != null) {
+                                        user.put(Constants.AUTH_USER_DISPLAY_NAME, firebaseUser.getDisplayName());
+                                    }
+                                    if (firebaseUser.getEmail() != null) {
+                                        user.put(Constants.AUTH_USER_EMAIL, firebaseUser.getEmail());
+                                    }
+                                    if (firebaseUser.getPhoneNumber() != null) {
+                                        user.put(Constants.AUTH_USER_PHONE, firebaseUser.getPhoneNumber());
+                                    }
+                                    if (firebaseUser.getPhotoUrl() != null) {
+                                        user.put(Constants.AUTH_USER_PICTURE, firebaseUser.getPhotoUrl().getPath());
+                                    }
+
+                                    FirebaseFirestore.getInstance()
+                                            .collection(Constants.FIRESTORE_COLLECTIONS_USERS)
+                                            .document(firebaseUser.getUid())
+                                            .set(user, SetOptions.merge())
+                                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                @Override
+                                                public void onComplete(@NonNull Task<Void> task) {
+                                                    if (task.isSuccessful()) {
+                                                        setLoadingScreen(false);
+                                                        App.user = firebaseUser;
+                                                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                                        startActivity(intent);
+                                                        finishAffinity();
+                                                    } else {
+                                                        setLoadingScreen(false);
+                                                        firebaseUser.delete();
+                                                        Toast.makeText(AuthenticationActivity.this, R.string.FAILED_FETCHING_ACCOUNT, Toast.LENGTH_LONG).show();
+                                                    }
+                                                }
+                                            }).addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    setLoadingScreen(false);
+                                                    Toast.makeText(mContext, e.getMessage(), Toast.LENGTH_SHORT).show();
+                                                }
+                                    });
+                                    break;
+                                }
+                            }
+
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Toast.makeText(AuthenticationActivity.this, task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+    }
+
+    /**
+     *
+     */
+    private void showNoNetworkDialog() {
+        setLoadingScreen(false);
         dialogFragment = new NoNetworkAlertDialog();
         dialogFragment.setCancelable(true);
         dialogFragment.show(getSupportFragmentManager(), "NO_NETWORK_DIALOG");
